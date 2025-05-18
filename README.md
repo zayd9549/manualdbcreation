@@ -8,9 +8,11 @@ Manual database creation in Oracle 19c is performed using **command-line tools**
 
 ---
 
-### **1. Create PFILE at `$ORACLE_HOME/dbs`**
+### **1. Set Environment Variables and Create PFILE at `$ORACLE_HOME/dbs`**
 
 ```bash
+export ORACLE_HOME=/u01/app/oracle/product/19.0.0/dbhome_1
+export PATH=$ORACLE_HOME/bin:$PATH
 cd $ORACLE_HOME/dbs
 vi initORCL.ora
 ```
@@ -25,6 +27,7 @@ Sample `initORCL.ora`:
 *.db_name='ORCL'
 *.diagnostic_dest='/u01/app/oracle'
 *.undo_tablespace='UNDOTBS1'
+*.sga_target=1g
 ```
 
 > 📘 **Explanation:** The PFILE (Parameter File) is a plain text initialization file used by Oracle to configure the instance. We place it in the `$ORACLE_HOME/dbs` directory with a unique name like `initORCL.ora` (where `ORCL` is your DB SID).
@@ -36,6 +39,7 @@ Sample `initORCL.ora`:
 > * `db_name`: Name of the database
 > * `diagnostic_dest`: Root location for all diagnostic files
 > * `undo_tablespace`: Tablespace used for rollback operations
+> * `sga_target`: Total size of SGA memory allocated to the instance
 
 > ✅ **Tip:** After the database is created, it's recommended to convert this PFILE into a binary SPFILE.
 
@@ -53,7 +57,7 @@ mkdir -p /home/oracle/dbscripts
 >
 > * `admin/ORCL/adump`: Directory to store audit logs.
 > * `oradata/ORCL`: Main location for database datafiles, control files, redo logs.
-> * `dbscripts`: Directory for keeping SQL scripts such as creation scripts for DB, tablespaces, etc.
+> * `dbscripts`: Directory for keeping SQL scripts such as creation scripts for DB
 
 ---
 
@@ -87,8 +91,8 @@ Paste the following script:
 
 ```sql
 CREATE DATABASE ORCL
-USER SYS IDENTIFIED BY manager
-USER SYSTEM IDENTIFIED BY manager
+USER SYS IDENTIFIED BY Oracle#123
+USER SYSTEM IDENTIFIED BY Oracle#123
 LOGFILE
   GROUP 1 '/u01/oradata/ORCL/redo1.log' SIZE 200M,
   GROUP 2 '/u01/oradata/ORCL/redo2.log' SIZE 200M,
@@ -124,25 +128,29 @@ Then run it from SQL\*Plus:
 ### **5. Run Post-Creation Scripts**
 
 ```sql
-@/u01/app/oracle/product/19.0.0/dbhome_1/rdbms/admin/catalog.sql
-@/u01/app/oracle/product/19.0.0/dbhome_1/rdbms/admin/catproc.sql
+@?/rdbms/admin/catalog.sql
+@?/rdbms/admin/catproc.sql
 ```
 
 > 📘 **Explanation:**
 >
-> * `catalog.sql`: Creates data dictionary views.
-> * `catproc.sql`: Installs Oracle supplied PL/SQL packages and procedures.
+> * `catalog.sql`: Creates data dictionary views (tables starting with DBA\_ / ALL\_ / USER\_).
+> * `catproc.sql`: Installs standard Oracle-supplied PL/SQL packages (like DBMS\_JOB, UTL\_FILE, etc). These packages are critical for core and optional database functionality.
 
 ---
 
 ### **6. Build Product User Profile Table**
 
 ```sql
-CONN system/manager
-@/u01/app/oracle/product/19.0.0/dbhome_1/sqlplus/admin/pupbld.sql
+CONN system/Oracle#123
+@?/sqlplus/admin/pupbld.sql
 ```
 
-> 📘 **Explanation:** `pupbld.sql` builds the product user profile table used by SQL\*Plus. It helps restrict access and control session attributes for users.
+> 📘 **Explanation:**
+>
+> * `pupbld.sql` creates the PRODUCT\_USER\_PROFILE (PUP) table used by SQL*Plus to restrict or configure user access to certain SQL*Plus commands (like `HOST`, `SPOOL`, etc).
+> * It must be run as SYSTEM user (not SYS) because this table resides in the SYSTEM schema and is used at SQL\*Plus login time.
+> * If not created, SQL\*Plus may throw warnings and some session-level restrictions might not work.
 
 ---
 
@@ -150,7 +158,7 @@ CONN system/manager
 
 ```sql
 CONN / AS SYSDBA
-@/u01/app/oracle/product/19.0.0/dbhome_1/rdbms/admin/utlrp.sql
+@?/rdbms/admin/utlrp.sql
 ```
 
 > 📘 **Explanation:** This script recompiles all invalid PL/SQL packages, procedures, and views to ensure the database is fully functional.
@@ -186,12 +194,12 @@ ORCL:/u01/app/oracle/product/19.0.0/dbhome_1:N
 
 To load environment via oraenv:
 
-
 ```bash
 . oraenv
 
 ORCL
 ```
+
 Or
 
 ```bash
@@ -211,7 +219,6 @@ export ORACLE_SID=ORCL
 export ORACLE_HOME=/u01/app/oracle/product/19.0.0/dbhome_1
 export PATH=$ORACLE_HOME/bin:$PATH
 ```
-Or
 
 To activate:
 
@@ -219,15 +226,13 @@ To activate:
 . /home/oracle/setdb_ORCL.env
 ```
 
-Or 
-
-Instead of manually setting environment variables every time, you can add them to your `.bash_profile`:
+Or add to your `.bash_profile`:
 
 ```bash
 vi ~/.bash_profile
 ```
 
-Add the following lines:
+Add:
 
 ```bash
 export ORACLE_SID=ORCL
@@ -235,7 +240,7 @@ export ORACLE_HOME=/u01/app/oracle/product/19.0.0/dbhome_1
 export PATH=$ORACLE_HOME/bin:$PATH
 ```
 
-Then reload the profile:
+Then reload:
 
 ```bash
 . ~/.bash_profile
@@ -276,6 +281,7 @@ STARTUP;
 | `db_name`                      | Database name (must match in control files).                                                      |
 | `diagnostic_dest`              | Base directory for ADR (Automatic Diagnostic Repository).                                         |
 | `undo_tablespace`              | Stores undo data for transactions. Required for consistent reads and rollbacks.                   |
+| `sga_target`                   | Total memory allocated for SGA (Shared Global Area). Controls memory usage for caches, pools.     |
 | `MAXLOGFILES`                  | Max number of redo log groups allowed. Useful for future expansion; default is \~16, max is 255.  |
 | `MAXLOGMEMBERS`                | Max number of members (copies) per redo log group. Provides redundancy—typical values are 2 or 3. |
 | `MAXDATAFILES`                 | Max number of datafiles allowed in the DB. Controls scalability. Default is \~200.                |
