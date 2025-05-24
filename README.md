@@ -157,12 +157,20 @@ sqlplus / as sysdba
 
 ```sql
 SELECT COUNT(*) FROM dba_objects WHERE status='INVALID';
+```
+---
+### 🔄 **9. Convert PFILE to SPFILE**
+
+
+```sql
+CREATE SPFILE FROM PFILE;
+SHUTDOWN IMMEDIATE;
+STARTUP;
 EXIT;
 ```
-
 ---
 
-### 📝 **9. Add Entry to `/etc/oratab`**
+### 📝 **10. Add Entry to `/etc/oratab`**
 
 ```bash
 vi /etc/oratab
@@ -181,17 +189,3 @@ ORCL:/u01/app/oracle/product/19.0.0/dbhome_1:N
 ```
 ---
 
-### 🔄 **11. Convert PFILE to SPFILE**
-
-```bash
-sqlplus / as sysdba
-```
-
-```sql
-CREATE SPFILE FROM PFILE;
-SHUTDOWN IMMEDIATE;
-STARTUP;
-EXIT;
-```
-
----
