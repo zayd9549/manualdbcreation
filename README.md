@@ -139,19 +139,15 @@ sqlplus / as sysdba
 
 ```sql
 @?/rdbms/admin/utlrp.sql
-EXIT;
 ```
 
 ---
 
 ### 🔎 **8. Check for Invalid Objects**
 
-```bash
-sqlplus / as sysdba
-```
-
 ```sql
 SELECT COUNT(*) FROM dba_objects WHERE status='INVALID';
+EXIT;
 ```
 ---
 ### 🔄 **9. Convert PFILE to SPFILE**
