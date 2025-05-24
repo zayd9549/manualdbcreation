@@ -104,16 +104,11 @@ sqlplus / as sysdba
 
 ```sql
 @/home/oracle/dbscripts/dbcreate.sql
-EXIT;
 ```
 
 ---
 
 ### 🧱 **5. Run Post-Creation Scripts**
-
-```bash
-sqlplus / as sysdba
-```
 
 ```sql
 @?/rdbms/admin/catalog.sql
