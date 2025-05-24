@@ -1,6 +1,6 @@
 # 🛠️ **Manual Database Creation in Oracle 19c**
 
-**"Manual database creation in Oracle 19c is done via command-line tools. This guide walks you through the process step by step."**
+Manual database creation in Oracle 19c is done via command-line tools. This guide walks you through the process step by step.
 
 ---
 
