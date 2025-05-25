@@ -157,7 +157,6 @@ This script recompiles invalid PL/SQL and Java objects in the database to ensure
 
 ```sql
 SELECT COUNT(*) FROM dba_objects WHERE status='INVALID';
-EXIT;
 ```
 
 💡 **Explanation**:
